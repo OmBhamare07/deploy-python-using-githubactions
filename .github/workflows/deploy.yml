@@ -1,4 +1,4 @@
-name: Deploy Python App to AWS S3
+name: Deploy to AWS S3 (Static Website)
 
 on:
   push:
@@ -10,36 +10,36 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-      - name: Checkout Repository
+      # 1️⃣ Checkout Repository
+      - name: Checkout code
         uses: actions/checkout@v4
 
+      # 2️⃣ Setup Python
       - name: Set up Python
         uses: actions/setup-python@v5
         with:
           python-version: '3.11'
 
-      - name: Install Dependencies
+      # 3️⃣ Run Python to Generate index.html
+      - name: Generate index.html
         run: |
-          pip install -r requirements.txt || true
+          python app.py
+          ls -la   # Debug: confirm file exists
 
-      - name: Generate HTML from Python Script
-        run: |
-          python app.py > index.html
-
-      - name: Configure AWS Credentials
+      # 4️⃣ Configure AWS Credentials
+      - name: Configure AWS credentials
         uses: aws-actions/configure-aws-credentials@v4
         with:
-          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID}}
-          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY}}
-          aws-region: ${{ secrets.AWS_REGION}}
+          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          aws-region: ${{ secrets.AWS_REGION }}
 
-      - name: Deploy to S3
+      # 5️⃣ Upload Only index.html to S3
+      - name: Upload to S3
         run: |
-          aws s3 sync . s3://${{ secrets.S3_BUCKET}}
-            --delete \
-            --exclude ".git/*" \
-            --exclude ".github/*" \
-            --cache-control "max-age=0,no-cache,no-store,must-revalidate"
+          aws s3 cp index.html s3://${{ secrets.S3_BUCKET }}/index.html \
+            --content-type text/html
 
-      - name: Deployment Complete
-        run: echo "Deployment to S3 completed successfully!"
+      # 6️⃣ Success Message
+      - name: Deployment complete
+        run: echo "Successfully deployed to S3 🚀"
